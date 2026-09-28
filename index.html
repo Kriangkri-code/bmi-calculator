@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>คำนวณค่าดัชนีมวลกาย BMI</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      background-color: #fce4ec;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .card {
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 420px;
+    }
+    h2 {
+      text-align: center;
+      color: #1e293b;
+      margin-bottom: 24px;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+    }
+    input:focus {
+      border-color: #ff5252;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background-color: #ff5252;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background-color: #ff1744;
+    }
+    button:disabled {
+      background-color: #cbd5e1;
+      cursor: not-allowed;
+    }
+    .result-box {
+      margin-top: 20px;
+      padding: 16px;
+      background-color: #fff0f5;
+      border-left: 5px solid #ff5252;
+      border-radius: 8px;
+      display: none;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>คำนวณค่าดัชนีมวลกาย BMI</h2>
+    <form id="bmiForm">
+      <div class="form-group">
+        <label for="name">ชื่อ - นามสกุล:</label>
+        <input type="text" id="name" required placeholder="ระบุชื่อของคุณ">
+      </div>
+      <div class="form-group">
+        <label for="weight">น้ำหนัก (กิโลกรัม):</label>
+        <input type="number" id="weight" step="0.1" required placeholder="เช่น 60">
+      </div>
+      <div class="form-group">
+        <label for="height">ส่วนสูง (เซนติเมตร):</label>
+        <input type="number" id="height" step="0.1" required placeholder="เช่น 165">
+      </div>
+      
+      <button type="submit" id="btnSubmit">คำนวณและบันทึกข้อมูล</button>
+    </form>
+
+    <div id="result" class="result-box"></div>
+  </div>
+
+  <script>
+    // ⚠️ นำ URL จาก Google Apps Script Web App มาวางที่นี่
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYnV09qwGIAYeqY05vOdot-6dT5tpaQUp8qGYep-P7np0SsQY8g1qIpoi9fL6WQW2Z/exec";
+
+    document.getElementById('bmiForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value;
+      const weight = parseFloat(document.getElementById('weight').value);
+      const heightCm = parseFloat(document.getElementById('height').value);
+      const btn = document.getElementById('btnSubmit');
+
+      // คำนวณค่า BMI
+      const heightM = heightCm / 100;
+      const bmi = (weight / (heightM * heightM)).toFixed(2);
+      
+      let category = "";
+      let risk = "";
+
+      // ประเมินตามเกณฑ์ในรูปภาพ
+      if (bmi < 18.5) {
+        category = "ผอมเกินไป";
+        risk = "เสี่ยงต่อการได้รับสารอาหารไม่เพียงพอ";
+      } else if (bmi <= 22.9) {
+        category = "น้ำหนักปกติ เหมาะสม";
+        risk = "มีความเสี่ยงต่อโรคต่าง ๆ น้อยที่สุด";
+      } else if (bmi <= 24.9) {
+        category = "น้ำหนักเกิน";
+        risk = "ถือว่ายังมีความเสี่ยงมากกว่าคนปกติ";
+      } else if (bmi <= 29.9) {
+        category = "อ้วน";
+        risk = "ยังมีความเสี่ยงต่อการเกิดโรค";
+      } else {
+        category = "อ้วนมาก";
+        risk = "เสี่ยงต่อการเกิดโรค";
+      }
+
+      // แสดงผลบนหน้าเว็บ
+      const resultDiv = document.getElementById('result');
+      resultDiv.style.display = "block";
+      resultDiv.innerHTML = `
+        <strong>ค่า BMI:</strong> ${bmi}<br>
+        <strong>เกณฑ์:</strong> ${category}<br>
+        <strong>ภาวะเสี่ยง:</strong> ${risk}
+      `;
+
+      btn.innerText = "กำลังบันทึกข้อมูล...";
+      btn.disabled = true;
+
+      // ส่งข้อมูลไปยัง Google Sheets ผ่าน Apps Script Web App
+      const payload = {
+        name: name,
+        weight: weight,
+        height: heightCm,
+        bmi: bmi,
+        category: category,
+        risk: risk
+      };
+
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'text/plain'
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        alert("บันทึกข้อมูลเรียบร้อยแล้ว!");
+        btn.innerText = "คำนวณและบันทึกข้อมูล";
+        btn.disabled = false;
+        document.getElementById('bmiForm').reset();
+      })
+      .catch(error => {
+        alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        console.error('Error!', error.message);
+        btn.innerText = "คำนวณและบันทึกข้อมูล";
+        btn.disabled = false;
+      });
+    });
+  </script>
+</body>
+</html>
